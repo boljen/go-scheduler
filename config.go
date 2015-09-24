@@ -34,7 +34,7 @@ func (c Config) rate() float32 {
 	if c.OPS <= 0 {
 		return 1
 	}
-	return 1 / c.OPS
+	return c.OPS
 }
 
 func (c Config) maxops() uint32 {
