@@ -131,7 +131,6 @@ func New(c Config) *Scheduler {
 
 // processTicks processes ticks in a background goroutine.
 func (s *Scheduler) processTicks() {
-	stop := false
 	for {
 		select {
 		case t := <-s.ticker.C:
@@ -139,10 +138,7 @@ func (s *Scheduler) processTicks() {
 				s.execOp()
 			}
 		case <-s.stop:
-			stop = true
-		}
-		if stop {
-			break
+			return
 		}
 	}
 }

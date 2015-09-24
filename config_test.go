@@ -11,11 +11,13 @@ func TestConfigMaxops(t *testing.T) {
 	if cfg.maxops() != 5 {
 		t.Fatal("wrong maxops")
 	}
+
 	if cfg.rate() != 1 {
 		t.Fatal("wrong default rate")
 	}
+
 	cfg.OPS = 4
-	if cfg.rate() != 0.25 {
+	if cfg.rate() != 4 {
 		t.Fatal("wrong rate")
 	}
 }
