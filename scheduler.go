@@ -199,7 +199,7 @@ func (s *Scheduler) InitPriority(p Priority, maxops int) {
 	// This is most likely the most efficient algorithm.
 	s.opl = append(s.opl, pm)
 	for i := len(s.opl) - 1; i > 0; i-- {
-		if s.opl[i].weight < s.opl[i-1].weight {
+		if s.opl[i].priority < s.opl[i-1].priority {
 			s.opl[i] = s.opl[i-1]
 			s.opl[i-1] = pm
 		}
@@ -228,6 +228,29 @@ func (s *Scheduler) Add(p Priority, o Operation) error {
 	}
 
 	s.curops++
+	return nil
+}
+
+// SetMinimumCallback sets a callback that will be launched when
+// the amount of available operations queued for a certain priority
+// equals the specified minimum.
+//
+// The callback will only be called once for each time the
+// current amount of operations falls below the minimum for
+// that priority.
+//
+// The callback will be called immediately if the amount of
+// operations already equals or is below the minimum.
+func (s *Scheduler) SetMinimumCallback(pr Priority, minimum int, cb func(Priority)) error {
+	pm, ok := s.pl[pr]
+	if !ok {
+		return ErrInvalidPriority
+	}
+	pm.Minimum = uint32(minimum)
+	pm.MinimumCallback = cb
+	if pm.Minimum >= pm.curops {
+		pm.MinimumCallback(pm.priority)
+	}
 	return nil
 }
 

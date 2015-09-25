@@ -66,12 +66,12 @@ func TestScheduler_Add(t *testing.T) {
 func TestScheduler_InitPriority(t *testing.T) {
 	rl := New(Config{})
 	rl.InitPriority(10, 100)
-	if rl.opl[0].weight != 10 {
+	if rl.opl[0].priority != 10 {
 		t.Fatal("wrong opl entry")
 	}
 
 	rl.InitPriority(5, 100)
-	if rl.opl[0].weight != 5 || rl.opl[1].weight != 10 {
+	if rl.opl[0].priority != 5 || rl.opl[1].priority != 10 {
 		t.Fatal("wrong opl entry")
 	}
 

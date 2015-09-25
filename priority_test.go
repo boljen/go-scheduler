@@ -4,7 +4,7 @@ import "testing"
 
 func TestNewPriorityMetadata(t *testing.T) {
 	p := newPriorityMetadata(12, 50)
-	if p.weight != 12 {
+	if p.priority != 12 {
 		t.Fatal("wrong weight")
 	}
 	if p.maxops != 50 {

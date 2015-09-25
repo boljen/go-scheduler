@@ -5,18 +5,20 @@ package scheduler
 type Priority int
 
 // (TODO): Refactor weight to "p"
-// (TODO): Add method to compare priority similar to bytes.Equal
 
 // priorityMetadata stores metadata of a priority inside the Scheduler.
 type priorityMetadata struct {
-	weight Priority
-	oplist map[int]Operation
+	priority Priority
+	oplist   map[int]Operation
 
 	maxops uint32 // Maximum amount of operations
 	curops uint32 // Current amount of operations
 
 	first int
 	last  int
+
+	Minimum         uint32
+	MinimumCallback func(Priority)
 }
 
 func getMaxops(maxops int) uint32 {
@@ -29,10 +31,10 @@ func getMaxops(maxops int) uint32 {
 
 func newPriorityMetadata(p Priority, maxops int) *priorityMetadata {
 	return &priorityMetadata{
-		weight: p,
-		oplist: make(map[int]Operation),
-		curops: 0,
-		maxops: getMaxops(maxops),
+		priority: p,
+		oplist:   make(map[int]Operation),
+		curops:   0,
+		maxops:   getMaxops(maxops),
 	}
 }
 
@@ -58,5 +60,8 @@ func (p *priorityMetadata) GetOperation() (Operation, bool) {
 	delete(p.oplist, p.first)
 	p.first++
 	p.curops--
+	if p.curops == p.Minimum && p.MinimumCallback != nil {
+		p.MinimumCallback(p.priority)
+	}
 	return o, true
 }
