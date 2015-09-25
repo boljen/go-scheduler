@@ -89,17 +89,18 @@ func worker(ch chan Operation) {
 
 // Scheduler schedules operations against a specific rate limit.
 type Scheduler struct {
-	mu           *sync.Mutex                    // Mutex
-	pl           map[Priority]*priorityMetadata // Mapped priority list.
-	opl          []*priorityMetadata            // Ordered priority list.
-	opqueue      chan Operation                 // Queue of pending operations for the workers.
-	usingWorkers bool                           // Whether separate goroutine workers are used.
-	pause        time.Time                      // The time until the scheduler must pause.
-	curops       uint32                         // total operations inside the scheduler queue.
-	maxops       uint32                         // max is the maximum amount of operations that can be in the scheduler.
-	fallback     Operation                      // Fallback operation in case no operations are available.
-	stop         chan bool                      // Used to stop the ticker goroutine.
-	ticker       *time.Ticker                   // The internal ticker.
+	pause        time.Time      // The time until the scheduler must pause.
+	usingWorkers bool           // Whether separate goroutine workers are used.
+	opqueue      chan Operation // Queue of pending operations for the workers.
+	fallback     Operation      // Fallback operation in case no operations are available.
+	stop         chan bool      // Used to stop the ticker goroutine.
+	ticker       *time.Ticker   // The internal ticker.
+
+	mu     *sync.Mutex                    // Mutex
+	pl     map[Priority]*priorityMetadata // Mapped priority list.
+	opl    []*priorityMetadata            // Ordered priority list.
+	curops uint32                         // total operations inside the scheduler queue.
+	maxops uint32                         // max is the maximum amount of operations that can be in the scheduler.
 }
 
 // New creates a newly initialized Scheduler instance.
@@ -131,7 +132,6 @@ func New(c Config) *Scheduler {
 
 // processTicks processes ticks in a background goroutine.
 func (s *Scheduler) processTicks() {
-	stop := false
 	for {
 		select {
 		case t := <-s.ticker.C:
@@ -139,10 +139,7 @@ func (s *Scheduler) processTicks() {
 				s.execOp()
 			}
 		case <-s.stop:
-			stop = true
-		}
-		if stop {
-			break
+			return
 		}
 	}
 }
