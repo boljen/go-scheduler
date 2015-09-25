@@ -80,3 +80,21 @@ func TestScheduler_InitPriority(t *testing.T) {
 		t.Fatal("wrong maxops entry")
 	}
 }
+
+func TestSchedulerSetMinimumCallback(t *testing.T) {
+	rl := New(Config{})
+	rl.InitPriority(10, 100)
+	if err := rl.SetMinimumCallback(Priority(1), 5, nil); err != ErrInvalidPriority {
+		t.Fatal("expected invalid priority error")
+	}
+
+	done := false
+	if err := rl.SetMinimumCallback(10, 5, func(p Priority) {
+		done = true
+	}); err != nil {
+		t.Fatal("unexpected error", err)
+	}
+	if !done {
+		t.Fatal("should have launched the minimum callback	")
+	}
+}

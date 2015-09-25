@@ -1,14 +1,11 @@
-// Package scheduler implements a scheduler for rate limited operations.
+// Package scheduler implements a scheduler for rate limited operations
+// using a prioritized queue.
 //
 // Use case
 //
-// The main use case for this scheduler is to interface with external API's
-// which impose a strict rate limit. Such a limit turns the API into a limited
-// resource, and with all limited resources, efficiency is very important.
-//
-// This becomes particularly problematic when you need to execute a variable
-// amount of real-time requests combined with as much background processing
-// requests as possible.
+// This package is built to schedule operations against rate limited API's.
+// More specifically it's meant for applications which need to perform both
+// real-time operations as well as a hefty amount of background scraping.
 //
 // Scheduler
 //
@@ -228,18 +225,11 @@ func (s *Scheduler) Add(p Priority, o Operation) error {
 	return nil
 }
 
-// SetMinimumCallback sets a callback that will be launched when
-// the amount of available operations queued for a certain priority
-// equals the specified minimum.
-//
-// The callback will only be called once for each time the
-// current amount of operations falls below the minimum for
-// that priority.
-//
-// The callback will be called immediately if the amount of
-// operations already equals or is below the minimum.
-func (s *Scheduler) SetMinimumCallback(pr Priority, minimum int, cb func(Priority)) error {
-	pm, ok := s.pl[pr]
+// SetMinimumCallback sets a callback that will be executed each time
+// the amount of registered operations for a specific priority reaches
+// the specified minimum. Only one callback per priority can be set.
+func (s *Scheduler) SetMinimumCallback(p Priority, minimum int, cb func(Priority)) error {
+	pm, ok := s.pl[p]
 	if !ok {
 		return ErrInvalidPriority
 	}
