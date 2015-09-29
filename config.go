@@ -28,6 +28,15 @@ type Config struct {
 	// This is by design and allows using this hook to refill the operations
 	// queue whenever it's empty.
 	Fallback Operation
+
+	// PriorityAutoInit sets whether priorities are automatically initialized.
+	// When this is false, the Scheduler will return an error every time an
+	// operation uses an uninitialized priority.
+	PriorityAutoInit bool
+
+	// PriorityDefaultCapacity indicates the default capacity of a priority.
+	// This is only relevant when PriorityAutoInit is true.
+	PriorityDefaultCapacity int
 }
 
 func (c Config) rate() float32 {

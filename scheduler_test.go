@@ -63,6 +63,24 @@ func TestScheduler_Add(t *testing.T) {
 
 }
 
+func TestScheduler_getPriorityMetadata(t *testing.T) {
+	rl := New(Config{})
+	rl.InitPriority(10, 100)
+	if _, err := rl.getPriorityMetadata(10); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := rl.getPriorityMetadata(100); err == nil {
+		t.Fatal("must return an error")
+	}
+	rl.pai = true
+	rl.pdc = 1234
+	if pm, err := rl.getPriorityMetadata(100); err != nil {
+		t.Fatal(err)
+	} else if pm.maxops != 1234 {
+		t.Fatal("wrong oplist capacity")
+	}
+}
+
 func TestScheduler_InitPriority(t *testing.T) {
 	rl := New(Config{})
 	rl.InitPriority(10, 100)

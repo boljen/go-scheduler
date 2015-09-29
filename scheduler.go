@@ -93,6 +93,9 @@ type Scheduler struct {
 	stop         chan bool      // Used to stop the ticker goroutine.
 	ticker       *time.Ticker   // The internal ticker.
 
+	pai bool // Priority Auto Initialization
+	pdc int  // Priority default capacity
+
 	mu     *sync.Mutex                    // Mutex
 	pl     map[Priority]*priorityMetadata // Mapped priority list.
 	opl    []*priorityMetadata            // Ordered priority list.
@@ -106,6 +109,8 @@ func New(c Config) *Scheduler {
 		mu:       new(sync.Mutex),
 		pl:       make(map[Priority]*priorityMetadata, 5),
 		opl:      make([]*priorityMetadata, 0, 5),
+		pai:      c.PriorityAutoInit,
+		pdc:      c.PriorityDefaultCapacity,
 		maxops:   c.maxops(),
 		fallback: c.Fallback,
 		stop:     make(chan bool),
@@ -201,9 +206,7 @@ func (s *Scheduler) InitPriority(p Priority, maxops int) {
 }
 
 // Add adds a new operation to the scheduler.
-// The priority must be an initialized priority.
-// See variables for the possible errors returned
-// by this operation.
+// The priority must be initialized unless automated initialization is enabled.
 func (s *Scheduler) Add(p Priority, o Operation) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -212,9 +215,9 @@ func (s *Scheduler) Add(p Priority, o Operation) error {
 		return ErrMaxCapacity
 	}
 
-	pm, ok := s.pl[p]
-	if !ok {
-		return ErrInvalidPriority
+	pm, err := s.getPriorityMetadata(p)
+	if err != nil {
+		return err
 	}
 
 	if err := pm.AddOperation(o); err != nil {
@@ -228,17 +231,32 @@ func (s *Scheduler) Add(p Priority, o Operation) error {
 // SetMinimumCallback sets a callback that will be executed each time
 // the amount of registered operations for a specific priority reaches
 // the specified minimum. Only one callback per priority can be set.
+// This will fail when the priority is not initialized and automated
+// initialization is disabled.
 func (s *Scheduler) SetMinimumCallback(p Priority, minimum int, cb func(Priority)) error {
-	pm, ok := s.pl[p]
-	if !ok {
-		return ErrInvalidPriority
+	pm, err := s.getPriorityMetadata(p)
+	if err != nil {
+		return err
 	}
+
 	pm.Minimum = uint32(minimum)
 	pm.MinimumCallback = cb
 	if pm.Minimum >= pm.curops {
 		pm.MinimumCallback(pm.priority)
 	}
 	return nil
+}
+
+func (s *Scheduler) getPriorityMetadata(p Priority) (*priorityMetadata, error) {
+	pm, ok := s.pl[p]
+	if !ok {
+		if !s.pai {
+			return nil, ErrInvalidPriority
+		}
+		s.InitPriority(p, s.pdc)
+		return s.pl[p], nil
+	}
+	return pm, nil
 }
 
 // Pause pauses the scheduler for the specified duration.
