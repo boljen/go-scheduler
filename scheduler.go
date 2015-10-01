@@ -182,8 +182,11 @@ func (s *Scheduler) getNextOp() Operation {
 // priority-specific limit will be applied.
 func (s *Scheduler) InitPriority(p Priority, maxops int) {
 	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.initPriority(p, maxops)
+	s.mu.Unlock()
+}
 
+func (s *Scheduler) initPriority(p Priority, maxops int) {
 	// If the priority already exists, simply overwrite the maxops.
 	// Make sure to lock the mutex to avoid any race-conditions.
 	if pr, ok := s.pl[p]; ok {
@@ -253,7 +256,7 @@ func (s *Scheduler) getPriorityMetadata(p Priority) (*priorityMetadata, error) {
 		if !s.pai {
 			return nil, ErrInvalidPriority
 		}
-		s.InitPriority(p, s.pdc)
+		s.initPriority(p, s.pdc)
 		return s.pl[p], nil
 	}
 	return pm, nil
